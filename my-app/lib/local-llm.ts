@@ -1,5 +1,5 @@
 const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL ?? "http://127.0.0.1:11434";
-const OLLAMA_CHAT_MODEL = process.env.OLLAMA_CHAT_MODEL ?? "llama3.2";
+const OLLAMA_CHAT_MODEL = process.env.OLLAMA_CHAT_MODEL ?? "gemma3:4b";
 const OLLAMA_EMBED_MODEL = process.env.OLLAMA_EMBED_MODEL ?? "nomic-embed-text";
 
 const CHROMA_BASE_URL = process.env.CHROMA_BASE_URL ?? "http://127.0.0.1:8000";
