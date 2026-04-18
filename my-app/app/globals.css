@@ -9,8 +9,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: "Cascadia Code", Consolas, "Courier New", monospace;
 }
 
 * {
@@ -29,7 +29,7 @@ body {
     radial-gradient(circle at bottom right, rgba(34, 211, 238, 0.08), transparent 28%),
     var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
   margin: 0;
 }
 

@@ -156,7 +156,7 @@ export function ChatApp() {
                 </div>
                 <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
                   <span>ChromaDB</span>
-                  <span className="font-medium text-cyan-200">127.0.0.1:8001</span>
+                  <span className="font-medium text-cyan-200">127.0.0.1:8000</span>
                 </div>
                 <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
                   <span>Collection</span>
