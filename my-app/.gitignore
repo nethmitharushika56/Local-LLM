@@ -23,6 +23,7 @@
 # misc
 .DS_Store
 *.pem
+Thumbs.db
 
 # debug
 npm-debug.log*
@@ -30,9 +31,23 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# env files
 .env*
+!.env.example
 
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# deployment
+.vercel
+
+# turbopack / turbo
+.turbo
+
+# jupyter
+.ipynb_checkpoints/
+
+# local chroma data (if mounted into the app folder)
+chroma-data/
+.chroma/
