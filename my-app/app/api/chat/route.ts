@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { answerWithLocalKnowledge } from "@/lib/local-llm";
+import { streamAnswerWithLocalKnowledge } from "@/lib/local-llm";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -21,12 +21,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Message is required." }, { status: 400 });
     }
 
-    const response = await answerWithLocalKnowledge(message, body.history ?? []);
+    const { stream } = await streamAnswerWithLocalKnowledge(message, body.history ?? []);
 
-    return NextResponse.json({
-      answer: response.answer,
-      model: response.model,
-      context: response.context,
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "application/x-ndjson; charset=utf-8",
+        "Cache-Control": "no-store",
+      },
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error.";
@@ -34,7 +35,7 @@ export async function POST(request: Request) {
       {
         error: "Unable to complete the local LLM request.",
         details: message,
-        hint: "Make sure Ollama is running on port 11434 and ChromaDB is running on port 8000.",
+        hint: "Make sure Ollama is running on port 11434 and ChromaDB is running on port 8001, or set CHROMA_BASE_URL to the port your container uses.",
       },
       { status: 500 },
     );

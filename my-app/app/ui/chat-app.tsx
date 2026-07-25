@@ -1,5 +1,6 @@
 "use client";
 
+import { plainTextFromMarkdown } from "@/lib/format-message";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 
 type ChatMessage = {
@@ -64,7 +65,8 @@ export function ChatApp() {
     setMessages(nextMessages);
     setInput("");
     setIsSubmitting(true);
-    setStatus("Thinking with Ollama + ChromaDB...");
+    setStatus("Retrieving context...");
+    setMessages((currentMessages) => [...currentMessages, { role: "assistant", content: "" }]);
 
     try {
       const response = await fetch("/api/chat", {
@@ -78,28 +80,81 @@ export function ChatApp() {
         }),
       });
 
-      const payload = (await response.json()) as ChatResponse;
-
       if (!response.ok) {
+        const payload = (await response.json()) as ChatResponse;
         throw new Error(payload.details ?? payload.error ?? "Request failed.");
       }
 
-      setLastContextCount(payload.context.length);
-      setMessages((currentMessages) => [
-        ...currentMessages,
-        { role: "assistant", content: payload.answer },
-      ]);
-      setLastModel(payload.model);
-      setStatus(`Answered by ${payload.model} with ${payload.context.length} context matches`);
+      if (!response.body) {
+        throw new Error("The server did not return a streaming response.");
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let answer = "";
+      let model = "gemma3:4b";
+      let contextCount = 0;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) {
+          break;
+        }
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+
+        for (const line of lines) {
+          if (!line.trim()) {
+            continue;
+          }
+
+          const event = JSON.parse(line) as
+            | { type: "meta"; model: string; context: ChatResponse["context"] }
+            | { type: "token"; token: string }
+            | { type: "done" };
+
+          if (event.type === "meta") {
+            model = event.model;
+            contextCount = event.context.length;
+            setLastContextCount(contextCount);
+            setLastModel(model);
+            setStatus(`Generating with ${model}...`);
+            continue;
+          }
+
+          if (event.type === "token") {
+            answer += event.token;
+            const displayAnswer = plainTextFromMarkdown(answer);
+            setMessages((currentMessages) => {
+              const updated = [...currentMessages];
+              updated[updated.length - 1] = { role: "assistant", content: displayAnswer };
+              return updated;
+            });
+            continue;
+          }
+
+          if (event.type === "done") {
+            setStatus(`Answered by ${model} with ${contextCount} context matches`);
+          }
+        }
+      }
+
+      if (!answer.trim()) {
+        throw new Error("The model returned an empty response.");
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown error.";
-      setMessages((currentMessages) => [
-        ...currentMessages,
-        {
+      setMessages((currentMessages) => {
+        const updated = [...currentMessages];
+        updated[updated.length - 1] = {
           role: "assistant",
           content: `Could not reach the local model stack. ${message}`,
-        },
-      ]);
+        };
+        return updated;
+      });
       setStatus("Check Ollama and ChromaDB");
     } finally {
       setIsSubmitting(false);
@@ -221,7 +276,9 @@ export function ChatApp() {
                           : "border border-white/10 bg-white/6 text-slate-100"
                       }`}
                     >
-                      <p className="whitespace-pre-wrap">{message.content}</p>
+                      <p className="whitespace-pre-wrap">
+                        {message.role === "assistant" ? plainTextFromMarkdown(message.content) : message.content}
+                      </p>
                     </div>
 
                     {isUser ? (
